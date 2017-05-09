@@ -14,6 +14,8 @@
         "rank": 10,
         "numIterations": 20,
         "lambda": 0.01,
+        "checkpointInterval": 10,
+        "checkpointDir": "checkpoint",
         "seed": 3
       }
     }

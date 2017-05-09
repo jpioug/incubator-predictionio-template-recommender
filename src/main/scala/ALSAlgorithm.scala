@@ -1,4 +1,4 @@
-package org.template.recommendation
+package org.example.recommendation
 
 import org.apache.predictionio.controller.PAlgorithm
 import org.apache.predictionio.controller.Params
@@ -17,6 +17,8 @@ case class ALSAlgorithmParams(
   rank: Int,
   numIterations: Int,
   lambda: Double,
+  checkpointDir: Option[String],
+  checkpointInterval: Int,
   seed: Option[Long]) extends Params
 
 class ALSAlgorithm(val ap: ALSAlgorithmParams)
@@ -31,12 +33,11 @@ class ALSAlgorithm(val ap: ALSAlgorithmParams)
   }
 
   def train(sc: SparkContext, data: PreparedData): ALSModel = {
-    sc.setCheckpointDir("checkpoint/")
     // MLLib ALS cannot handle empty training data.
-    // require(!data.ratings.take(1).isEmpty,
-    //   s"RDD[Rating] in PreparedData cannot be empty." +
-    //   " Please check if DataSource generates TrainingData" +
-    //   " and Preprator generates PreparedData correctly.")
+    require(!data.ratings.take(1).isEmpty,
+      s"RDD[Rating] in PreparedData cannot be empty." +
+      " Please check if DataSource generates TrainingData" +
+      " and Preparator generates PreparedData correctly.")
     // Convert user and item String IDs to Int index for MLlib
 
     val userStringIntMap = BiMap.stringInt(data.ratings.map(_.user))
@@ -49,27 +50,21 @@ class ALSAlgorithm(val ap: ALSAlgorithmParams)
     // seed for MLlib ALS
     val seed = ap.seed.getOrElse(System.nanoTime)
 
-    // If you only have one type of implicit event (Eg. "view" event only),
-    // replace ALS.train(...) with
-    //val m = ALS.trainImplicit(
-      //ratings = mllibRatings,
-      //rank = ap.rank,
-      //iterations = ap.numIterations,
-      //lambda = ap.lambda,
-      //blocks = -1,
-      //alpha = 1.0,
-      //seed = seed)
+    ap.checkpointDir.foreach { v => sc.setCheckpointDir(v) }
 
+    // If you only have one type of implicit event (Eg. "view" event only),
+    // set implicitPrefs to true
+    val implicitPrefs = false
     val als = new ALS()
     als.setUserBlocks(-1)
     als.setProductBlocks(-1)
     als.setRank(ap.rank)
     als.setIterations(ap.numIterations)
     als.setLambda(ap.lambda)
-    als.setImplicitPrefs(false)
+    als.setImplicitPrefs(implicitPrefs)
     als.setAlpha(1.0)
     als.setSeed(seed)
-    als.setCheckpointInterval(2)
+    als.setCheckpointInterval(ap.checkpointInterval)
     val m = als.run(mllibRatings)
 
     new ALSModel(
