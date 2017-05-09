@@ -17,8 +17,6 @@ case class ALSAlgorithmParams(
   rank: Int,
   numIterations: Int,
   lambda: Double,
-  checkpointDir: Option[String],
-  checkpointInterval: Int,
   seed: Option[Long]) extends Params
 
 class ALSAlgorithm(val ap: ALSAlgorithmParams)
@@ -50,7 +48,8 @@ class ALSAlgorithm(val ap: ALSAlgorithmParams)
     // seed for MLlib ALS
     val seed = ap.seed.getOrElse(System.nanoTime)
 
-    ap.checkpointDir.foreach { v => sc.setCheckpointDir(v) }
+    // Set your checkpoint directory
+    sc.setCheckpointDir("checkpoint")
 
     // If you only have one type of implicit event (Eg. "view" event only),
     // set implicitPrefs to true
@@ -64,7 +63,7 @@ class ALSAlgorithm(val ap: ALSAlgorithmParams)
     als.setImplicitPrefs(implicitPrefs)
     als.setAlpha(1.0)
     als.setSeed(seed)
-    als.setCheckpointInterval(ap.checkpointInterval)
+    als.setCheckpointInterval(5)
     val m = als.run(mllibRatings)
 
     new ALSModel(
