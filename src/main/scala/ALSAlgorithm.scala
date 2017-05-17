@@ -27,7 +27,8 @@ class ALSAlgorithm(val ap: ALSAlgorithmParams)
   if (ap.numIterations > 30) {
     logger.warn(
       s"ALSAlgorithmParams.numIterations > 30, current: ${ap.numIterations}. " +
-      s"There is a chance of running to StackOverflowException. Lower this number to remedy it")
+      s"There is a chance of running to StackOverflowException." +
+      s"To remedy it, set lower numIterations or checkpoint parameters.")
   }
 
   def train(sc: SparkContext, data: PreparedData): ALSModel = {
