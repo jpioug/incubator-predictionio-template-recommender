@@ -1,7 +1,3 @@
-import AssemblyKeys._
-
-assemblySettings
-
 name := "template-scala-parallel-recommendation"
 
 scalaVersion := "2.11.0"
